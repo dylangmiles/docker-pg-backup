@@ -11,8 +11,7 @@ $ make
 ```
 docker run \
 -v /var/destination:/var/destination \
--p 18080:18080 \
--e TIMEZONE="Europe/Berlin" \
+-e TIMEZONE="Africa/Johannesburg" \
 -e SCHEDULE="0 0 3 * *" \
 -e BACKUP_OPTS="-u postgres -p test -h 172.17.0.68" \
 dylangmiles/docker-pg-backup
@@ -24,7 +23,7 @@ dylangmiles/docker-pg-backup
 docker run \
 --entrypoint="/usr/local/sbin/backup-run.sh" \
 -v ~/dev/temp/backups:/var/destination \
--e BACKUP_OPTS="-u postgres -p test -h 127.0.0.1" \
+-e BACKUP_OPTS="-u postgres -p abc123! -h host.docker.internal -c gzip" \
 dylangmiles/docker-pg-backup
 
 ```
