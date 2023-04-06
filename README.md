@@ -1,4 +1,4 @@
-# PostgreSQL Backup
+# Scheduled PostgreSQL Backup
 
 Create schedule backups of databases in a PostgreSQL server to a destination directory.
 
