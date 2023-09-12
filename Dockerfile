@@ -1,22 +1,101 @@
-FROM		postgres:14.2-bullseye
+FROM		postgres:15.4-bookworm
 MAINTAINER	Dylan Miles <dylan.g.miles@gmail.com>
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 # install required packages
 RUN		apt-get update -qq && \
-		apt-get install -y --no-install-recommends ca-certificates curl && \
-        apt-get clean autoclean && \
-        apt-get autoremove --yes && \
-        rm -rf /var/lib/{apt,dpkg,cache,log}/
+		apt-get install -y \
+					#ca-certificates \
+					curl \
+					wget \
+					unzip \
+					msmtp \
+					gettext \
+					mutt \
+					#apt-transport-https \
+					#lsb-release \
+					#gnupg
+		&& apt-get autoremove --yes \
+		&& rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-ENV		GO_CRON_VERSION v0.0.7
+# Auzre CLI
+# RUN 	mkdir -p /etc/apt/keyrings \
+# 		&& curl -sLS https://packages.microsoft.com/keys/microsoft.asc | \
+#     		gpg --dearmor | \
+#     		tee /etc/apt/keyrings/microsoft.gpg > /dev/null	\
+# 		&& chmod go+r /etc/apt/keyrings/microsoft.gpg
+#
+# RUN 	AZ_REPO=$(lsb_release -cs) \
+# 		&& echo "deb [arch=`dpkg --print-architecture` signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | \
+#     		tee /etc/apt/sources.list.d/azure-cli.list
+#
+# RUN		apt-get update -qq && \
+# 		apt-get install -y azure-cli
 
-RUN		curl -L https://github.com/odise/go-cron/releases/download/${GO_CRON_VERSION}/go-cron-linux.gz \
-		| zcat > /usr/local/bin/go-cron \
-		&& chmod u+x /usr/local/bin/go-cron
+ENV		GO_CRON_VERSION v0.0.10
 
-# install backup scripts
-ADD		backup-postgres.sh /usr/local/sbin/backup-postgres.sh
+# linux/arm64 packages
+# GO CRON
+RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] ; then \
+	curl -L "https://github.com/prodrigestivill/go-cron/releases/download/v0.0.10/go-cron-linux-arm64.gz" \
+	| zcat > /usr/local/bin/go-cron \
+	&& chmod u+x /usr/local/bin/go-cron; \
+	fi
+
+# AWS CLI
+RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] ; then \
+	curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" \
+	&& unzip awscliv2.zip \
+	&& ./aws/install \
+	; \
+	fi
+
+# AzureCopy
+RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] ; then \
+	curl "https://aka.ms/downloadazcopy-v10-linux-arm64" -L -o "downloadazcopy-v10-linux-arm64.tar.gz" \
+	&& tar -xzvf downloadazcopy-v10-linux-arm64.tar.gz \
+	&& cp ./azcopy_linux_arm64_*/azcopy /usr/bin/ \
+	; \
+	fi
+
+# linux/amd64 packages
+# GO CRON
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ] ; then \
+	curl -L "https://github.com/prodrigestivill/go-cron/releases/download/v0.0.10/go-cron-linux-amd64.gz" \
+	| zcat > /usr/local/bin/go-cron \
+	&& chmod u+x /usr/local/bin/go-cron; \
+	fi
+
+# AWS CLI
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ] ; then \
+	curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+	&& unzip awscliv2.zip \
+	&& ./aws/install \
+	; \
+	fi
+
+# AzureCopy
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ] ; then \
+	curl "https://aka.ms/downloadazcopy-v10-linux" -L -o "downloadazcopy-v10-linux.tar.gz" \
+	&& tar -xzvf downloadazcopy-v10-linux.tar.gz \
+	&& cp ./azcopy_linux_amd64_*/azcopy /usr/bin/ \
+	; \
+	fi
+
+
+
+# Configure mail notification sending
+ADD conf/.muttrc /root/.muttrc.template
+ADD conf/.msmtprc /root/.msmtprc.template
+
+# Install backup scripts
+ADD		backup-db.sh /usr/local/sbin/backup-db.sh
 ADD		backup-run.sh /usr/local/sbin/backup-run.sh
+
+#18080 http status port
+EXPOSE		18080
 
 ADD		docker-entrypoint.sh /usr/local/sbin/docker-entrypoint.sh
 ENTRYPOINT	["/usr/local/sbin/docker-entrypoint.sh"]
