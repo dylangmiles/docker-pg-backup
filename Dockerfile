@@ -7,32 +7,14 @@ ARG BUILDPLATFORM
 # install required packages
 RUN		apt-get update -qq && \
 		apt-get install -y \
-					#ca-certificates \
 					curl \
 					wget \
 					unzip \
 					msmtp \
 					gettext \
 					mutt \
-					#apt-transport-https \
-					#lsb-release \
-					#gnupg
 		&& apt-get autoremove --yes \
 		&& rm -rf /var/lib/{apt,dpkg,cache,log}/
-
-# Auzre CLI
-# RUN 	mkdir -p /etc/apt/keyrings \
-# 		&& curl -sLS https://packages.microsoft.com/keys/microsoft.asc | \
-#     		gpg --dearmor | \
-#     		tee /etc/apt/keyrings/microsoft.gpg > /dev/null	\
-# 		&& chmod go+r /etc/apt/keyrings/microsoft.gpg
-#
-# RUN 	AZ_REPO=$(lsb_release -cs) \
-# 		&& echo "deb [arch=`dpkg --print-architecture` signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | \
-#     		tee /etc/apt/sources.list.d/azure-cli.list
-#
-# RUN		apt-get update -qq && \
-# 		apt-get install -y azure-cli
 
 ENV		GO_CRON_VERSION v0.0.10
 
